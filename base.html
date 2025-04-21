@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barkitna Card Services</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'website_app:index' %}">Senior seva</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'website_app:index' %}">Home</a>
+                    </li>
+                    <li class="nav-item {% if request.path == '/services/' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'website_app:services' %}">Services</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Chatbot Widget (Only on Home Page) -->
+    {% if request.path == '/' %}
+    <div id="chatbot-container" style="position: fixed; bottom: 70px; right: 20px; width: 350px; max-height: 100vh; z-index: 10000; display: none; box-shadow: 0 0 10px rgba(0,0,0,0.2); border-radius: 10px; overflow-y: auto; background: white; transition: all 0.3s ease;">
+        <div style="background: #ff6200; color: white; padding: 10px; font-size: 18px; font-weight: bold; border-top-left-radius: 10px; border-top-right-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Chatbot</span>
+            <button id="chatbot-close" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;" aria-label="Close Chatbot">×</button>
+        </div>
+        <div style="position: relative; height: calc(100% - 40px);">
+            <div id="chatbot-loading" style="display: block; padding: 20px; text-align: center; color: #ff6200; font-weight: bold; font-size: 16px; background: #fff5f0; border-radius: 0 0 10px 10px;">
+                Loading chatbot...
+            </div>
+            <iframe id="chatbot-iframe" src="{% url 'website_app:chatbot' %}" width="100%" height="100%" frameborder="0" title="Barkitna Chatbot" style="border-radius: 0 0 10px 10px; display: none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none'; this.previousElementSibling.style.display='none'; this.nextElementSibling.style.display='block';">
+            </iframe>
+            <div id="chatbot-fallback" style="display: none; padding: 20px; text-align: center; color: #ff6200; font-weight: bold; font-size: 16px; background: #fff5f0; border-radius: 0 0 10px 10px;">
+                Unable to load chatbot. Please try again later or <a href="mailto:support@barkitna.ae" style="color: #ff6200; text-decoration: underline;">contact support</a>.
+                <br>
+                <button id="chatbot-retry" style="margin-top: 10px; background: #ff6200; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">Retry</button>
+            </div>
+        </div>
+    </div>
+    <button id="chatbot-toggle" style="position: fixed; bottom: 20px; right: 20px; z-index: 10001; background: #ff6200; color: white; border: none; padding: 10px; border-radius: 50%; cursor: pointer; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: all 0.3s ease;" aria-label="Open Chatbot">
+        💬
+    </button>
+
+    <!-- Responsive Styles for Chatbot -->
+    <style>
+        #chatbot-container {
+            width: 600px;
+            max-height: 100vh;
+            height: 600px;
+        }
+        #chatbot-toggle:hover {
+            background: #e55a00;
+            transform: scale(1.1);
+        }
+        #chatbot-retry:hover {
+            background: #e55a00;
+        }
+        @media (max-width: 600px) {
+            #chatbot-container {
+                width: 98%;
+                max-height: 70vh;
+                min-height: 500px;
+                bottom: 60px;
+                right: 1%;
+                left: 1%;
+                border-radius: 0;
+            }
+            #chatbot-toggle {
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+
+    <!-- JavaScript to Toggle Chatbot -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatbotContainer = document.getElementById('chatbot-container');
+            const toggleButton = document.getElementById('chatbot-toggle');
+            const closeButton = document.getElementById('chatbot-close');
+            const chatbotIframe = document.getElementById('chatbot-iframe');
+            const loadingDiv = document.getElementById('chatbot-loading');
+            const fallbackDiv = document.getElementById('chatbot-fallback');
+            const retryButton = document.getElementById('chatbot-retry');
+	
+            const closeChatbot = () => {
+                chatbotContainer.style.display = 'none';
+                toggleButton.innerHTML = '💬';
+                toggleButton.setAttribute('aria-label', 'Open Chatbot');
+            };
+
+            const reloadIframe = () => {
+                loadingDiv.style.display = 'block';
+                chatbotIframe.style.display = 'none';
+                fallbackDiv.style.display = 'none';
+
+                const iframeSrc = chatbotIframe.src;
+                chatbotIframe.src = '';
+                chatbotIframe.src = iframeSrc;
+
+                setTimeout(() => {
+                    if (loadingDiv.style.display === 'block') {
+                        loadingDiv.style.display = 'none';
+                        chatbotIframe.style.display = 'none';
+                        fallbackDiv.style.display = 'block';
+                    }
+                }, 5000);
+            };
+
+            toggleButton.addEventListener('click', () => {
+                if (chatbotContainer.style.display === 'none' || chatbotContainer.style.display === '') {
+                    chatbotContainer.style.display = 'block';
+                    toggleButton.innerHTML = '×';
+                    toggleButton.setAttribute('aria-label', 'Close Chatbot');
+                    reloadIframe();
+                } else {
+                    closeChatbot();
+                }
+            });
+
+            closeButton.addEventListener('click', closeChatbot);
+
+            retryButton.addEventListener('click', reloadIframe);
+        });
+    </script>
+    {% endif %}
+
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p>© 2025 Senior Seva helpline. All rights reserved.</p>
+            <p>Visit us at <a href="https://www.fdf.gov.ae" target="_blank">www.fdf.gov.ae</a></p>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

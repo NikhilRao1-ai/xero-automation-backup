@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            min-height: 100vh;
+            overflow: auto;
+        }
+        .chat-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 400px;
+            overflow-y: hidden;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+            word-wrap: break-word;
+            border: 1px solid #ccc;
+        }
+        .user-message {
+            background: #ff6200;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .bot-message {
+            background: #e0e0e0;
+            color: #333;
+            margin-right: auto;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .input-container {
+            max-width: 600px;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .input-container button {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .input-container button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chat-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {% if message.is_bot %}bot-message{% else %}user-message{% endif %}">
+                    <div>{{ message.message }}</div>
+                    <div class="timestamp">{{ message.timestamp }}</div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="message bot-message">
+                <div>Welcome to the Senior Citizen Chatbot. Start chatting below!</div>
+            </div>
+        {% endif %}
+    </div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Enter your message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            if (message) {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.innerHTML = `<div>${message}</div><div class="timestamp">${new Date().toLocaleString()}</div>`;
+                chatContainer.appendChild(userMessage);
+
+                input.value = '';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                fetch('/chatbot/save_message/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `message=${encodeURIComponent(message)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const botMessage = document.createElement('div');
+                        botMessage.className = 'message bot-message';
+                        botMessage.innerHTML = `<div>${data.bot_message}</div><div class="timestamp">${data.bot_timestamp}</div>`;
+                        chatContainer.appendChild(botMessage);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    } else {
+                        console.error('Error saving message:', data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

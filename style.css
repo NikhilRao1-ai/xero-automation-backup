@@ -1,0 +1,26 @@
+body {
+    font-family: Arial, sans-serif;
+}
+.navbar {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.navbar-brand {
+    font-weight: bold;
+    color: #ff6200 !important;
+}
+.nav-link {
+    color: #333 !important;
+}
+.nav-link:hover, .nav-link.active {
+    color: #ff6200 !important;
+}
+footer {
+    border-top: 1px solid #ddd;
+}
+footer a {
+    color: #ff6200;
+    text-decoration: none;
+}
+footer a:hover {
+    text-decoration: underline;
+}
